@@ -1,0 +1,207 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{hyperref}
+
+\geometry{margin=2.5cm}
+
+\title{Lignes directrices pour la collecte de données\\
+et la conformité au droit d'auteur\\
+\large{Projet : Modèle de prédiction de suicidabilité chez les poètes}}
+\author{José Manuel Rodríguez Caballero}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\onehalfspacing
+
+\section{Introduction}
+
+Le présent rapport décrit les principes et les procédures pour la collecte de 
+données nécessaires à l'entraînement d'un modèle d'apprentissage automatique 
+capable de prédire si un poète est ``suicidaire'' ou non, à partir d'informations 
+liées à ses poèmes et à ses caractéristiques démographiques. 
+
+Contrairement à certaines approches qui utilisent des techniques de fouille de texte 
+(\textit{text mining}), nous soulignons qu'\textbf{aucun text mining automatisé} 
+ne sera mis en \oe uvre. Tous les poèmes seront \textbf{extraits manuellement} de 
+livres empruntés en bibliothèque, afin de recueillir les variables nécessaires 
+(\textit{e.g.} nombre de mots, mesures de sentiment, etc.). 
+
+Le rapport explique:
+\begin{itemize}
+    \item Les modalités de collecte des poèmes en accord avec le droit d'auteur.
+    \item Les informations à extraire de chaque poème et du poète.
+    \item Les aspects \textbf{éthiques} et \textbf{légaux} de la démarche.
+\end{itemize}
+
+\section{Objectif du projet}
+
+Notre but est de développer un modèle supervisé (\textit{machine learning}) 
+prédictif, qui puisse estimer la probabilité qu'un poète présente un risque de 
+suicidabilité, sur la base des informations suivantes:
+\begin{itemize}
+    \item \textbf{Données démographiques et biographiques} de l'auteur 
+    (\textit{genre}, \textit{année de naissance}, \textit{année de décès ou 
+    de suicide}, etc.).
+    \item \textbf{Caractéristiques agrégées des poèmes} (ex. nombre total 
+    de mots, mesures de sentiment, diversité lexicale, etc.).
+\end{itemize}
+
+Le projet \textbf{n'exploite pas} le texte intégral des poèmes pour le stockage 
+ou la diffusion publique, afin de respecter le droit d'auteur. Seules des mesures 
+statistiques et métriques agrégées sont recueillies et enregistrées pour l'analyse.
+
+\section{Collecte de données}
+
+\subsection{Sources des poèmes}
+
+Les poèmes sont consultés dans des livres \textbf{empruntés dans des bibliothèques}. 
+Ainsi, chaque poème est extrait \textbf{manuellement} par l'équipe, qui relève 
+uniquement des informations structurées:
+\begin{itemize}
+    \item Titre du poème, titre du livre ou recueil.
+    \item Nom de l'auteur, date de naissance et éventuelles autres informations 
+    biographiques (si disponibles).
+    \item Nombre de mots, nombre de lignes, etc.
+    \item Résultats d'analyse sémantique ou de sentiment \textbf{effectués à la main} 
+    ou via un logiciel dédié \textit{(localement)}, sans conservation du texte intégral.
+\end{itemize}
+
+\subsection{Respect du droit d'auteur}
+
+Dans le cadre de ce projet, nous nous assurons:
+\begin{enumerate}
+    \item \textbf{D'obtenir légalement l'accès aux livres:} \\
+    Les ouvrages sont consultés dans le strict respect des règles de la bibliothèque. 
+    Nous n'effectuons aucune reproduction ou numérisation massive 
+    qui serait contraire à la législation.
+
+    \item \textbf{De ne pas diffuser le texte intégral:} \\
+    Seules des \textbf{extractions agrégées} (comptages, statistiques) 
+    seront enregistrées dans notre base de données. 
+    Les poèmes complets, même s'ils sont saisissables à la main, 
+    ne sont \textbf{pas} inclus dans les données finales.
+
+    \item \textbf{D'utiliser uniquement les mesures nécessaires:} \\
+    Pour l'apprentissage automatique, nous ne conservons que 
+    les \textbf{indicateurs utiles} (ex. sentiment moyen, 
+    proportion de mots négatifs, etc.). Nous ne conservons pas 
+    de larges extraits ou de copies du poème susceptibles de violer 
+    le droit d'auteur.
+\end{enumerate}
+
+\section{Données à recueillir et formalisation}
+
+\subsection{Données sur le poète}
+
+\begin{itemize}
+    \item \textbf{Identifiant unique} (numérique ou pseudonyme) permettant 
+    de relier plusieurs poèmes au même poète.
+    \item \textbf{Nom du poète} (ou anonymisé si nécessaire).
+    \item \textbf{Genre} (M, F, Non-binaire, \textit{autre}).
+    \item \textbf{Année de naissance}. 
+    \item \textbf{Année de suicide} si applicable. 
+    \item \textbf{Statut suicidaire} (oui/non) pour la classification.
+\end{itemize}
+
+\subsection{Données sur chaque poème}
+
+\begin{itemize}
+    \item \textbf{Titre du poème} et \textbf{titre du livre} ou recueil.
+    \item \textbf{Nombre de mots} (estimé ou compté).
+    \item \textbf{Nombre de lignes} et autres métriques (ex. longueur moyenne 
+    de ligne).
+    \item \textbf{Scores de sentiment} (ex. entre -1 et +1) 
+    ou \textbf{scores d'émotions fines} (ex. colère, joie, tristesse, 
+    exprimés en pourcentage).
+    \item \textbf{Indicateurs de variabilité} (ex. écart-type du sentiment 
+    par ligne, \textit{sentiment slope}).
+\end{itemize}
+
+Toutes ces variables sont suffisamment anonymes pour ne pas 
+enfreindre le droit d'auteur, dans la mesure où elles ne permettent 
+pas de reconstituer directement le texte intégral.
+
+\section{Exploitation des données pour la prédiction}
+
+\subsection{Modèle et pipeline}
+
+\begin{enumerate}
+    \item \textbf{Constitution de la base de données}:\\
+    Une table reliera chaque poète à ses poèmes (par \textit{poet\_id} 
+    et \textit{poem\_id}). 
+    Les champs agrégés (sentiment, etc.) seront renseignés.
+
+    \item \textbf{Séparation entraînement/test}:\\
+    Nous divisons aléatoirement l'ensemble des poèmes 
+    en un échantillon d'entraînement et un échantillon de test.
+
+    \item \textbf{Extraction de caractéristiques}:\\
+    Les variables pertinentes (ex. sentiment moyen, score de diversité lexicale, 
+    genre du poète, etc.) sont transformées ou encodées (éventuellement normalisées).
+
+    \item \textbf{Entraînement du classifieur}:\\
+    Nous pourrons utiliser un algorithme de classification (Random Forest, 
+    SVM, réseau de neurones, etc.) afin de distinguer les poètes ``suicidaires'' 
+    de ceux qui ne le sont pas.
+
+    \item \textbf{Évaluation et interprétation}:\\
+    Les performances seront mesurées via la précision, le rappel, la F-mesure 
+    ou encore l'AUC (surface sous la courbe ROC). Nous analyserons également 
+    les \textbf{caractéristiques les plus influentes} (importance des variables).
+\end{enumerate}
+
+\subsection{Aspects éthiques et limitations}
+
+\begin{itemize}
+    \item \textbf{Sujet sensible}: 
+    L'étude de la suicidabilité peut engendrer des interprétations délicates. 
+    Le modèle n'a pas vocation à poser un diagnostic médical.
+
+    \item \textbf{Variabilité historique et culturelle}: 
+    Les poètes sélectionnés peuvent varier selon l'époque, la culture, 
+    et la langue. Les conclusions ne sont pas nécessairement généralisables 
+    à l'ensemble des populations.
+
+    \item \textbf{Respect de la vie privée et de la mémoire}: 
+    Les données ne doivent pas diffamer ni stigmatiser des auteurs spécifiques. 
+    L'anonymisation peut s'avérer nécessaire si les poètes ou leurs ayants droit 
+    le demandent.
+\end{itemize}
+
+\section{Conclusion}
+
+Ce document présente les lignes directrices pour \textbf{collecter et traiter} 
+des informations extraites \textbf{manuellement} de poèmes empruntés en bibliothèque, 
+sans enfreindre le droit d'auteur. Les grandes idées sont:
+\begin{itemize}
+    \item \textbf{Limiter la collecte} aux variables agrégées et indispensables 
+    au modèle prédictif.
+    \item \textbf{Ne pas reproduire} les oeuvres intégrales pour éviter toute 
+    violation de la propriété intellectuelle.
+    \item \textbf{Privilégier la prudence} sur le plan éthique et légal, 
+    compte tenu du sujet sensible (le risque suicidaire).
+\end{itemize}
+
+Les données, une fois rassemblées, alimenteront un modèle d'apprentissage 
+automatique conçu pour \textit{prédire} la suicidabilité d'un poète sur 
+la base de caractéristiques linguistiques et démographiques. Les résultats 
+devront être interprétés avec \textbf{caution} et ne sauraient se substituer 
+à un diagnostic médical.
+
+\bigskip
+\textbf{Référence Principale :}
+\begin{itemize}
+    \item \textbf{Stirman, Shannon Wiltsey, and James W. Pennebaker.} 
+    ``Word use in the poetry of suicidal and nonsuicidal poets.'' 
+    \textit{Psychosomatic medicine} 63, no. 4 (2001): 517-522.
+\end{itemize}
+
+\end{document}
+
