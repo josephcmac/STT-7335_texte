@@ -106,43 +106,135 @@
 	
 
 	
-	%============================================================
-	\section{Analyse avec Réduction de la Dimension}
-	%============================================================
-	
-	\subsection{Principe}
-	L’analyse statistique se concentre sur les \textbf{moyennes d’émotions par poète}. 
-	Pour chaque auteur, on agrège (par la moyenne) les 10 scores d’émotions 
-	sur l’ensemble de ses vers, formant ainsi un vecteur dans $\mathbb{R}^{10}$. 
-	On obtient donc une matrice $M$ de dimension $14 \times 10$ (14 poètes, 10 émotions).
-	
-	\subsection{Analyse en Composantes Principales (ACP)}
-	\paragraph{Standardisation}
-	Avant l’ACP, on ``centre-réduit'' les 10 colonnes d’émotion, 
-	afin de les ramener à une moyenne nulle et un écart-type unitaire.
-	
-	\paragraph{Décomposition}
-	Soient $\lambda_1 \ge \lambda_2 \ge \dots \ge \lambda_{10}$ 
-	les valeurs propres de la matrice de covariance de $M$. Les composantes principales 
-	(PC1, PC2, etc.) sont les vecteurs propres associés, ordonnés par importance décroissante.
-	
-	\paragraph{Résultats}
-	\begin{itemize}
-		\item \textbf{PC1 et PC2} : Les deux premières composantes expliquent environ 77,7\,\% 
-		de la variance (50,4\,\% pour PC1, 27,5\,\% pour PC2).
-		\item \textbf{Position des poètes} : En projetant chaque poète dans le plan (PC1, PC2), 
-		on peut observer d’éventuelles tendances de regroupement selon \texttt{suicidal}.
-		Aucune séparation claire n’est obligatoirement visible, 
-		mais des indices de différences émotionnelles peuvent se dégager.
-	\end{itemize}
-	
-	\begin{figure}[htbp]
-		\centering
-		\includegraphics[width=0.65\textwidth]{pca_plot.png}
-		\caption{Représentation des poètes dans le plan défini par les deux premières composantes principales (PC1 et PC2). Les couleurs indiquent par exemple le statut suicidaire.}
-		\label{fig:pca_plot}
-	\end{figure}
-	
+%============================================================
+\section{Analyse en Composantes Principales (ACP)}
+%============================================================
+
+\subsection{Principe et Préparation}
+L'objectif est de résumer les différences émotionnelles entre poètes à l'aide 
+d'une \textbf{analyse en composantes principales (ACP)}. 
+Pour chaque poète, on calcule la moyenne de ses scores d'émotion 
+(\texttt{anger}, \texttt{joy}, \texttt{negative}, etc.), 
+obtenant ainsi un vecteur dans $\mathbb{R}^{10}$. 
+La matrice finale, de taille $14 \times 10$, est ensuite ``centrée-réduite'', 
+de sorte que chaque variable ait une moyenne nulle et un écart-type unitaire. 
+
+\subsection{Éboulis des Valeurs Propres (Scree Plot)}
+La Figure~\ref{fig:scree_plot} présente l'éboulis des valeurs propres. 
+Chaque barre correspond à la proportion de variance expliquée par une composante principale. 
+Ici, on constate que les deux premières composantes 
+expliquent déjà plus de 75\,\% de la variance cumulée. 
+Cela motive l'examen plus approfondi des axes PC1 et PC2.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.65\textwidth]{01_scree_plot.png}
+	\caption{Éboulis des valeurs propres : part de la variance expliquée par chaque composante (PC1 à PC10).}
+	\label{fig:scree_plot}
+\end{figure}
+
+\subsection{Projection des Poètes (PC1, PC2)}
+Dans la Figure~\ref{fig:acp_ind}, on projette les poètes (individus) 
+dans le plan formé par les deux premières composantes principales. 
+Les points sont colorés en fonction du statut \texttt{suicidal} 
+(\texttt{TRUE} ou \texttt{FALSE}). 
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=1\textwidth]{02_individuals_PC1_PC2.png}
+	\caption{Projection des poètes sur les deux premières composantes principales (PC1 et PC2).}
+	\label{fig:acp_ind}
+\end{figure}
+
+Même si l'on observe une dispersion relativement importante, 
+on peut investiguer si les poètes suicidaires se situent dans une zone distincte. 
+Nous discutons plus loin (Section~\ref{subsec:test_pc}) 
+de la comparaison statistique des scores de PC1 et PC2 selon le statut suicidaire.
+
+\subsection{Visualisation des Variables (Biplot et Cercle de Corrélations)}
+\paragraph{Biplot.}
+La Figure~\ref{fig:pca_biplot} superpose la projection des individus (poètes) 
+et des variables (émotions) dans le même plan. Les flèches indiquent 
+la direction d'accroissement d'une émotion particulière, 
+et leur longueur traduit l'importance de la représentation sur PC1--PC2. 
+Un poète situé dans la même direction qu'une flèche 
+présente une valeur élevée pour cette émotion (par rapport aux autres).
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.7\textwidth]{03_pca_biplot.png}
+	\caption{Biplot ACP : individus et variables (émotions) dans le plan (PC1, PC2).}
+	\label{fig:pca_biplot}
+\end{figure}
+
+\paragraph{Cercle des Corrélations.}
+La Figure~\ref{fig:pca_vars} illustre uniquement les émotions (variables) 
+et leurs corrélations dans l'espace des deux premières composantes. 
+Deux variables dont les vecteurs forment un angle faible 
+sont positivement corrélées (et inversement pour un angle proche de 180°). 
+Plus le vecteur est long, plus la variable est bien représentée par PC1--PC2.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.6\textwidth]{04_correlations_circle.png}
+	\caption{Cercle des corrélations : variables émotionnelles projetées sur PC1 et PC2.}
+	\label{fig:pca_vars}
+\end{figure}
+
+\subsection{Comparaison Statistique des Scores sur PC1 et PC2}
+\label{subsec:test_pc}
+Pour évaluer si la position des poètes sur les deux premiers axes 
+diffère significativement selon le statut \texttt{suicidal}, 
+on compare ci-après les distributions de PC1 et PC2 par groupe.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.49\textwidth]{05_boxplot_PC1.png}
+	\hfill
+	\includegraphics[width=0.49\textwidth]{06_boxplot_PC2.png}
+	\caption{Boxplots comparant PC1 (gauche) et PC2 (droite) selon le statut suicidaire.}
+	\label{fig:boxplots_pc1_pc2}
+\end{figure}
+
+Les boxplots (Figure~\ref{fig:boxplots_pc1_pc2}) montrent 
+qu'aucun groupe ne se détache de façon flagrante. 
+Afin d'étayer cela, on effectue un \textit{Welch Two Sample t-test} 
+pour chacune des composantes (PC1 et PC2). 
+Les résultats se trouvent dans le fichier \texttt{07\_tests\_statistiques.txt} 
+et sont reproduits ci-dessous.
+
+\paragraph{Test sur PC1.}
+\begin{verbatim}
+	t = 1.6581, df = 9.2921, p-value = 0.1306
+	IC 95%: [-0.6681746, 4.4029684]
+	Moyenne (nonsuicidal) = 0.9336984
+	Moyenne (suicidal)    = -0.9336984
+\end{verbatim}
+
+\paragraph{Test sur PC2.}
+\begin{verbatim}
+	t = 1.7063, df = 9.0007, p-value = 0.1221
+	IC 95%: [-0.4597469, 3.2824927]
+	Moyenne (nonsuicidal) = 0.7056865
+	Moyenne (suicidal)    = -0.7056865
+\end{verbatim}
+
+Dans les deux cas, la \textit{p-value} est supérieure à 0,05, 
+indiquant qu'il n'y a pas de différence statistiquement significative 
+entre poètes suicidaires et non suicidaires 
+concernant les scores moyens sur PC1 ou PC2. 
+On note cependant que les moyennes présentent des signes inverses 
+(``positifs'' pour les poètes non suicidaires et ``négatifs'' pour les suicidaires). 
+Ce ``renversement'' n’est pas suffisant pour être jugé significatif 
+au vu de l’échantillon restreint (\textit{p-value} > 0,1). 
+
+En conclusion, l’ACP permet de visualiser les différences (ou similarités) 
+dans l’espace des émotions, mais elle ne révèle pas, selon ces tests, 
+de séparation nette entre poètes suicidaires et non suicidaires 
+sur les deux premières composantes.
+
+%----------------------------------------------------------
+
 	
 	%============================================================
 \end{document}
