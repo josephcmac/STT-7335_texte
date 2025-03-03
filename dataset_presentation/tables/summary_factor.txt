@@ -1,0 +1,5 @@
+=== Résumé des variables qualitatives (en français) ===
+     Sexe        Période    
+ Female:1756   Early :1097  
+ Male  :1687   Later : 969  
+               Middle:1377  
