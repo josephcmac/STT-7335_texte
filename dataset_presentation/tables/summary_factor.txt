@@ -1,4 +1,4 @@
-=== Résumé des variables qualitatives (en français) ===
+=== Résumé des variables qualitatives ===
      Sexe        Période    
  Female:1756   Early :1097  
  Male  :1687   Later : 969  
