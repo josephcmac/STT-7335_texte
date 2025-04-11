@@ -1,0 +1,115 @@
+\section{Modélisation par mélanges gaussiens et ACP}
+\label{sec:mgaussiens-pca}
+
+L’objectif de ce chapitre est d’évaluer la capacité d’un \textbf{modèle de mélanges gaussiens} (\texttt{MclustDA}) à distinguer les poètes \textbf{suicidaires} (\og\, VRAI \fg) des \textbf{non suicidaires} (\og\, FAUX \fg), en s’appuyant sur différentes variables émotionnelles et démographiques. Pour renforcer la robustesse du modèle, on applique notamment un \textbf{rééchantillonnage bootstrap} suivi d’une \textbf{Analyse en Composantes Principales (ACP)}. Les prédictions sont finalement validées à l’aide d’une procédure \og\, \emph{leave-one-poet-out} \fg.
+
+\subsection{Protocole général}
+
+\begin{enumerate}
+	\item \textbf{Lecture et préparation des données.}  
+	Les observations portent sur 16 poètes, pour lesquels on dispose de :
+	\begin{itemize}
+		\item leurs \emph{caractéristiques émotionnelles} (par exemple \texttt{anticipation}, \texttt{colère}, \texttt{joie}, \texttt{positive}, etc.), 
+		\item leur statut \og\, suicidaire \fg{} ou \og\, non suicidaire \fg, encodé en \textbf{VRAI/FAUX}.
+	\end{itemize}
+	Après la lecture du fichier \texttt{clean\_data\_2.csv}, les colonnes appropriées sont sélectionnées et converties aux formats voulus (facteurs, booléens, etc.).
+	
+	\item \textbf{Création d’échantillons bootstrap.}  
+	Pour chaque itération, un nouveau \emph{jeu d’entraînement} est généré \emph{avec remise} (10\,000 rééchantillonnages), et la moyenne des variables numériques est calculée séparément pour les poètes suicidaires (VRAI) et non suicidaires (FAUX). Cette étape vise à lisser la variabilité, surtout lorsque l’échantillon est restreint.
+	
+	\item \textbf{Réduction de dimension par ACP.}  
+	Sur chaque jeu d’entraînement bootstrapé, on applique une \textbf{analyse en composantes principales}. Les variables émotionnelles, centrées et réduites, sont projetées dans un nouvel espace de dimensions potentiellement plus faibles. Cela limite les effets de la colinéarité et facilite l’ajustement du modèle gaussien.
+	
+	\item \textbf{Ajustement du modèle \texttt{MclustDA}.}  
+	Les scores sur les composantes principales (ACP) et la variable cible \texttt{suicidal} (VRAI/FAUX) servent de base pour estimer un \textbf{modèle de mélanges gaussiens discriminants}. Pour un nouvel individu, le modèle alloue la classe (VRAI ou FAUX) qui maximise la probabilité a posteriori.
+	
+	\item \textbf{Validation \og\, leave-one-poet-out\fg.}  
+	À chaque itération, on \emph{exclut} un poète afin de constituer l’échantillon de test. Le reste des données est utilisé pour :
+	\begin{itemize}
+		\item générer le bootstrap et ajuster le modèle (\texttt{MclustDA}) après ACP,
+		\item projeter le poète exclu dans l’espace des composantes principales, afin de prédire son statut suicidaire (VRAI/FAUX).
+	\end{itemize}
+	Cette procédure est répétée pour les 16 poètes, chacun étant tour à tour l’exclu.
+	
+\end{enumerate}
+
+\subsection{Résultats de la validation leave-one-poet-out}
+
+Le Tableau~\ref{tab:res-by-poet} détaille, pour chaque poète, la classe \textbf{observée} (VRAI = suicidaire, FAUX = non suicidaire) et la classe \textbf{prédite} (VRAI/FAUX) par le modèle après application du protocole. Les poètes dont l’observation et la prédiction ne coïncident pas apparaissent en gras.
+
+\begin{table}[H]
+	\centering
+	\caption{Comparaison entre la classe prédite et la classe observée pour chaque poète (validation leave-one-poet-out).}
+	\label{tab:res-by-poet}
+	\begin{tabular}{lcc}
+		\toprule
+		\textbf{Poète} & \textbf{Observé (suicidal)} & \textbf{Prédit (suicidal)} \\
+		\midrule
+		Sylvia Plath            & VRAI  & VRAI  \\
+		Denise Levertov         & FAUX & FAUX \\
+		Anne Sexton             & VRAI  & VRAI  \\
+		\textbf{Adrienne Rich}           & FAUX & VRAI  \\
+		Randall Jarrell         & VRAI  & VRAI  \\
+		Robert Lowell           & FAUX & FAUX \\
+		John Berryman           & VRAI  & VRAI  \\
+		Lawrence Ferlinghetti   & FAUX & FAUX \\
+		Hart Crane              & VRAI  & VRAI  \\
+		William Carlos Williams & FAUX & FAUX \\
+		Sara Teasdale           & VRAI  & VRAI  \\
+		\textbf{Edna St. Vincent Millay} & FAUX & VRAI  \\
+		Charlotte Mew           & VRAI  & VRAI  \\
+		Edith Sitwell           & FAUX & FAUX \\
+		John Davidson           & VRAI  & VRAI  \\
+		\textbf{Alfred Edward Housman}  & FAUX & VRAI  \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+
+\subsection{Matrice de confusion et indicateurs de performance}
+
+En agrégeant l’ensemble des prédictions issues du tableau précédent, on obtient la \textbf{matrice de confusion globale} (Tableau~\ref{tab:conf-matrix}) :
+
+\begin{table}[H]
+	\centering
+	\caption{Matrice de confusion globale issue du protocole \emph{leave-one-poet-out}.}
+	\label{tab:conf-matrix}
+	\begin{tabular}{lcc}
+		\toprule
+		& \textbf{Observé : Non-suicidaire} & \textbf{Observé : Suicidaire} \\
+		\midrule
+		\textbf{Prédit : Non-suicidaire} & 5 & 0 \\
+		\textbf{Prédit : Suicidaire}     & 3 & 8 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+La Table~\ref{tab:conf-stats} regroupe plusieurs indicateurs dérivés de cette matrice :
+
+\begin{table}[H]
+	\centering
+	\caption{Statistiques de performance du modèle \texttt{MclustDA} (validation leave-one-poet-out).}
+	\label{tab:conf-stats}
+	\begin{tabular}{lc}
+		\toprule
+		\textbf{Mesure} & \textbf{Valeur estimée} \\
+		\midrule
+		Exactitude (Accuracy)            & \(81.25\%\) \\
+		Intervalle de confiance (95\,\%)  & \([54.35\%,\,95.95\%]\) \\
+		Kappa                             & \(0.625\) \\
+		Sensibilité (Recall)             & \(1.00\) \\
+		Spécificité                       & \(0.625\) \\
+		Exactitude équilibrée (Balanced Accuracy) & \(0.8125\) \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+\noindent
+\textbf{Faits saillants :}
+\begin{itemize}
+	\item \textbf{Sensibilité = 1,00} : le modèle détecte tous les poètes suicidaires (aucun \emph{faux négatif}).  
+	\item \textbf{Spécificité = 0,625} : près d’un tiers des poètes non suicidaires sont étiquetés à tort comme suicidaires (\emph{faux positifs}).  
+	\item \textbf{Exactitude globale} (Accuracy) : environ \(81\,\%\), avec un intervalle de confiance assez large, reflétant la petite taille de l’échantillon.  
+	\item \textbf{Kappa = 0,625} : indique une concordance modérée entre la classification prédite et la classification observée, au-delà du pur hasard.
+\end{itemize}
+

@@ -1,0 +1,258 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}    % Encodage UTF-8
+\usepackage[T1]{fontenc}       % Encodage de la police
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{lscape}            % si besoin de pages en paysage
+\usepackage{caption}           % légendes
+\usepackage{float}             % pour forcer le placement des figures/tables
+
+\geometry{
+	left=2.5cm,
+	right=2.5cm,
+	top=3cm,
+	bottom=3cm
+}
+
+\title{\textbf{Rapport des premières analyses}}
+\author{%
+	\textsc{José Manuel Rodríguez Caballero} 
+}%
+\date{\today}
+
+\begin{document}
+	\maketitle
+	\tableofcontents
+	
+	\section{Introduction}
+	Dans ce rapport, nous présentons les premières analyses requises dans le cadre du projet du cours \emph{STT-7335 Méthodes d'analyse de données}. Nous suivons le plan demandé, qui inclut:
+	
+	\begin{enumerate}
+		\item \textbf{Séparation} du jeu de données en deux sous-ensembles (entraînement et test).
+		\item \textbf{Ajustement} de plusieurs modèles (k-nn, régression linéaire, etc.) sur les observations complètes.
+		\item \textbf{Imputation} des valeurs manquantes selon deux méthodes différentes: moyenne/mode et un modèle multivarié (ici, \texttt{mice}).
+		\item \textbf{Ré-ajustement} des mêmes modèles sur les données imputées.
+		\item \textbf{Évaluation} sur le jeu de données test et comparaison des performances (MSE) avec un modèle nul.
+	\end{enumerate}
+	
+	Le jeu de données retenu est un ensemble de vers poétiques (\emph{poet, sex, period, date\_of\_birth, date\_of\_death}, etc.) et des scores d'émotions (\emph{anger, anticipation, disgust, \dots}). Notre variable cible est \texttt{anticipation}. Les scripts \texttt{R} ci-joints permettent de reproduire l'intégralité des analyses et de vérifier la \emph{reproductibilité} des résultats.
+	
+	\section{Séparation du jeu de données}
+	Nous avons d'abord séparé le jeu complet (3443~observations) en deux parties:
+	\begin{itemize}
+		\item \textbf{Entraînement (train)}: 75\,\% des observations, utilisé pour ajuster les modèles.
+		\item \textbf{Test}: 25\,\% restant, afin d'évaluer la performance prédictive.
+	\end{itemize}
+	Le code \texttt{R} (\texttt{prepare\_data}) effectue cette division de manière aléatoire avec une graine fixe. On obtient deux data frames: \texttt{train\_df} et \texttt{test\_df}.
+	
+	\section{Gestion des données manquantes}
+	Le rapport requiert d'abord une étape sans imputation (on retire les lignes incomplètes), puis deux approches d'imputation distinctes:
+	
+	\subsection{Retrait des lignes incomplètes}
+	Nous avons défini un vecteur \texttt{vars\_needed} contenant les variables essentielles au modèle (\texttt{anticipation, joy, trust, heterosexual, \dots}). Ensuite, nous avons filtré (\texttt{filter(complete.cases(...))}) pour conserver uniquement les observations ne présentant aucune valeur manquante. Les modèles ajustés sur ces données seront utilisés comme référence.
+	
+	\subsection{Imputation par la moyenne/le mode}
+	Pour chaque colonne:
+	\begin{itemize}
+		\item Si elle est numérique, on remplace les valeurs manquantes par la \emph{moyenne} observée chez les non-manquants.
+		\item Si elle est factorielle ou logique, on utilise la \emph{modalité la plus fréquente} (mode).
+	\end{itemize}
+	Nous avons ainsi imputé toutes les colonnes ayant des données manquantes dans \texttt{train\_df}, puis appliqué la même logique au test (\texttt{test\_df}), en utilisant les valeurs calculées sur \textbf{le train}.
+	
+	\subsection{Imputation par un modèle multivarié (\texttt{mice})}
+	Pour exploiter les \emph{corrélations} entre variables, nous utilisons la librairie \texttt{mice}. Celle-ci applique, par défaut, des méthodes d'imputation adaptées au type de chaque variable (p.~ex. \texttt{logreg} pour les variables binaires, \texttt{pmm} pour les variables numériques, \texttt{polyreg} pour les facteurs, etc.). Nous avons laissé \texttt{mice} choisir automatiquement en précisant un maximum de 5 itérations (\texttt{maxit=5}). Nous avons ensuite imputé les valeurs manquantes dans \texttt{train\_df}, puis refait la même chose pour \texttt{test\_df}.
+	
+\section{Ajustement des modèles}
+Conformément au plan, nous avons ajusté \textbf{quatre} modèles distincts pour chacune des versions du jeu de données (sans imputation, imputation moyenne/mode, imputation \texttt{mice}). 
+Notons qu’avec \verb|train_knn| (voir ci-dessous), nous n’appliquons pas la réduction de dimension par ACP, alors qu’avec \verb|train_knn_pca|, nous utilisons explicitement l’option \verb|pca| dans l’argument \verb|preProcess|. Cela illustre la différence entre une approche k-nn simple et une approche k-nn appliquée après analyse en composantes principales.
+
+\begin{enumerate}
+	\item \textbf{k-nn} (\emph{k nearest neighbors})
+	
+	\textbf{Modèle mathématique :}  
+	Pour un nouveau point \(\mathbf{x}\), la prédiction du \textit{k-nn} est donnée par :
+	\[
+	\hat{y}_{\text{k-nn}}(\mathbf{x})
+	\;=\;
+	\frac{1}{k}\sum_{i \in \mathcal{N}_k(\mathbf{x})} y_i,
+	\]
+	où \(\mathcal{N}_k(\mathbf{x})\) représente l'ensemble des indices des \(k\) plus proches voisins de \(\mathbf{x}\) dans le jeu d'entraînement, et \(y_i\) sont les valeurs-cibles correspondantes.
+	
+	\textbf{Formule en R (exemple avec le package \texttt{caret}) :}
+	\begin{verbatim}
+		train_knn <- train(
+		anticipation ~ joy + surprise + trust + joy:trust + heterosexual,
+		data       = train_df,
+		method     = "kknn",
+		trControl  = trainControl(method = "cv", number = 5),
+		preProcess = c("center","scale"),
+		tuneGrid   = expand.grid(
+		kmax     = c(1,3,5,7),
+		distance = 2,
+		kernel   = "optimal"
+		)
+		)
+	\end{verbatim}
+	\emph{Remarque : Ici, \texttt{preProcess} ne contient pas \texttt{pca}, donc aucune réduction de dimension par ACP n’est effectuée.}
+	
+	\item \textbf{k-nn + PCA}
+	
+	\textbf{Modèle mathématique :}  
+	On commence par réduire la dimension des variables explicatives via l’Analyse en Composantes Principales (ACP). Soit
+	\[
+	\mathbf{z}
+	\;=\;
+	W^\top \bigl(\,\mathbf{x} - \overline{\mathbf{x}}\,\bigr),
+	\]
+	où \(\mathbf{z}\) est le vecteur des composantes principales, \(W\) est la matrice des vecteurs propres, et \(\overline{\mathbf{x}}\) la moyenne des prédicteurs.  
+	Ensuite, on applique le \textit{k-nn} à \(\mathbf{z}\). La prédiction pour un nouveau point \(\mathbf{x}\) devient :
+	\[
+	\hat{y}_{\text{k-nn+PCA}}(\mathbf{x})
+	\;=\;
+	\frac{1}{k}\sum_{i \in \mathcal{N}_k(\mathbf{z})} y_i,
+	\]
+	où \(\mathcal{N}_k(\mathbf{z})\) désigne l'ensemble des \(k\) plus proches voisins dans l'espace des composantes principales.
+	
+	\textbf{Formule en R (exemple avec \texttt{caret} et prétraitement PCA) :}
+	\begin{verbatim}
+		train_knn_pca <- train(
+		anticipation ~ joy + surprise + trust + joy:trust + heterosexual,
+		data       = train_df,
+		method     = "kknn",
+		trControl  = trainControl(method = "cv", number = 5),
+		preProcess = c("center","scale","pca"),
+		tuneGrid   = expand.grid(
+		kmax     = c(1,3,5,7),
+		distance = 2,
+		kernel   = "optimal"
+		)
+		)
+	\end{verbatim}
+	
+	\item \textbf{Régression linéaire simple}
+	
+	\textbf{Modèle mathématique :}  
+	On modélise la variable réponse \(y\) en fonction de \(p\) prédicteurs \(x_1,\dots,x_p\) par :
+	\[
+	y_i \;=\; \beta_0 \;+\; \beta_1\,x_{i1} \;+\;\dots+\;\beta_p\,x_{ip} \;+\; \varepsilon_i,
+	\]
+	où \(\varepsilon_i\) est un terme d'erreur aléatoire centré.
+	
+	\textbf{Formule en R (avec \texttt{lm}) :}
+	\begin{verbatim}
+		lm_model <- lm(
+		anticipation ~ joy + surprise + trust + joy:trust + heterosexual,
+		data = train_df
+		)
+	\end{verbatim}
+	
+	\item \textbf{Régression linéaire + PCA}
+	
+	\textbf{Modèle mathématique :}  
+	On projette d'abord les prédicteurs \(\mathbf{x}\) sur leurs composantes principales :
+	\[
+	\mathbf{z}
+	\;=\;
+	W^\top \bigl(\mathbf{x} - \overline{\mathbf{x}}\bigr).
+	\]
+	Si l'on conserve \(M\) composantes, alors on ajuste :
+	\[
+	y_i \;=\; \alpha_0 \;+\; \sum_{m=1}^M \alpha_m\,z_{im} \;+\; \varepsilon_i.
+	\]
+	Les \(\alpha_m\) sont estimés par moindres carrés sur l’espace des composantes principales.
+	
+	\textbf{Formule en R (exemple avec \texttt{caret} et prétraitement PCA) :}
+	\begin{verbatim}
+		train_lm_pca <- train(
+		anticipation ~ joy + surprise + trust + joy:trust + heterosexual,
+		data       = train_df,
+		method     = "lm",
+		trControl  = trainControl(method = "cv", number = 5),
+		preProcess = c("center","scale","pca")
+		# Possibilité de tuner pcaComp si désiré
+		)
+	\end{verbatim}
+\end{enumerate}
+
+Nous avons également inclus un \textbf{modèle nul} (qui prédit la moyenne de \texttt{anticipation} sur l'échantillon d'entraînement) comme point de comparaison.
+
+	
+	\section{Évaluation sur le jeu de test}
+	Pour chaque configuration (sans imputation, imputation moyenne/mode, imputation \texttt{mice}), nous prédisons la variable \texttt{anticipation} sur \texttt{test\_df} et calculons le \emph{Mean Squared Error} (MSE). Les résultats sont rassemblés dans un tableau comparatif (voir Table~\ref{tab:mse_results}), permettant de juger quelle approche est la plus efficace. Nous regardons en particulier:
+	
+	\begin{itemize}
+		\item \textbf{MSE du modèle nul}: repère de base.
+		\item \textbf{k-nn et k-nn + PCA}: le meilleur $k$ est sélectionné par validation croisée.
+		\item \textbf{Régression linéaire et régression linéaire + PCA}.
+	\end{itemize}
+	
+\subsection{Observations mal prédites}
+
+Pour mieux comprendre les situations dans lesquelles notre modèle k-NN (après imputation \texttt{mice}) échoue, nous avons identifié les observations de l’ensemble de test associées à de fortes erreurs absolues de prédiction (c’est-à-dire une différence importante entre la valeur prédite et la valeur réelle de \texttt{anticipation}). Quelques constats et pistes d’interprétation :
+
+\begin{itemize}
+	\item \textbf{Poèmes très courts ou structure singulière :} Certains poèmes contiennent peu de mots (\texttt{n\_words} faible) ou présentent des émotions extrêmes (\texttt{anger} = 1, \texttt{fear} = 2, etc.). Ces configurations atypiques compliquent la tâche du k-NN, puisqu’il manque de “voisins similaires” dans l’échantillon d’apprentissage pour bien estimer \texttt{anticipation}.
+	
+	\item \textbf{Cumul ou absence d’émotions marquées :} On remarque que plusieurs de ces observations mal prédites cumulent des indicateurs émotionnels (\texttt{anger}, \texttt{disgust}, \texttt{negative}, etc.) ou, à l’inverse, présentent très peu de traits affectifs. Cela peut dérouter le modèle si peu de poèmes partagent la même configuration.
+	
+	\item \textbf{Poètes suicidaires ou au style atypique :} Plusieurs auteurs (p.~ex. \emph{John Davidson}, \emph{Hart Crane}, \emph{Sara Teasdale}, \emph{Anne Sexton}) sont regroupés sous la variable \texttt{suicidal} = \texttt{TRUE}. Le registre émotionnel de leurs œuvres peut être particulier et difficile à “faire correspondre” au sein de l’échantillon d’entraînement si ces auteurs y sont peu représentés.
+	
+	\item \textbf{Grande différence entre \texttt{anticipation} observée et prédite :} Certains poèmes se voient attribuer une valeur réelle d’\texttt{anticipation} (par ex. 2) tandis que la prédiction k-NN reste proche de 0 (ou vice versa). Le modèle n’arrive alors pas à capturer les indices textuels et métadonnées qui signaleraient une forte \texttt{anticipation}.
+	
+	\item \textbf{Hypothèse d’outliers ou de contextes rares :} Enfin, plusieurs poèmes à fortes erreurs partagent des profils uniques ou très singuliers (combinaison de variables extrêmes, style propre à l’auteur, etc.). Une analyse plus poussée (cluster, étude qualitative des textes) permettrait de préciser si ces cas doivent être traités comme “atypiques”.
+\end{itemize}
+
+Ces observations mal prédites soulignent les limites du k-NN dans des cas peu fréquents ou très spécifiques. Mieux représenter le style poétique, affiner l’ensemble des prédicteurs ou recourir à des méthodes plus robustes aux outliers pourraient constituer des pistes d’amélioration pour de futurs travaux.
+
+
+	
+	\section{Résultats et interprétation}
+	Le tableau ci-dessous illustre un exemple de comparaison des MSE sur le jeu de test, selon la méthode d'imputation et le modèle utilisé. Cet exemple est directement extrait d'une exécution du script \texttt{R} fourni.
+	
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{@{}lccccc@{}}
+			\toprule
+			\textbf{Stratégie} & \textbf{Null MSE} & \textbf{k-nn} & \textbf{LM} & \textbf{k-nn + PCA} & \textbf{LM + PCA}\\
+			\midrule
+			Removed Missing  & 0.159 & 0.109 & 0.0905 & 0.105 & 0.0914 \\
+			Mean/Mode        & 0.151 & 0.101 & 0.0808 & 0.0960 & 0.0819 \\
+			MICE             & 0.151 & 0.0991 & 0.0808 & 0.0965 & 0.0819 \\
+			\bottomrule
+		\end{tabular}
+		\caption{Exemple de comparaison des MSE sur l'échantillon de test.}
+		\label{tab:mse_results}
+	\end{table}
+	
+	On remarque que la \textbf{régression linéaire} (avec ou sans PCA) parvient en général à obtenir des MSE plus faibles que k-nn, et qu'avec l'imputation par \texttt{mice}, on obtient de légers gains. Le \textbf{modèle nul}, quant à lui, affiche des MSE plus élevés, ce qui témoigne de l'intérêt d'ajouter des prédicteurs.
+	
+\section{Conclusion et perspectives}
+
+À la lumière des différentes expériences menées, plusieurs enseignements peuvent être dégagés :
+
+\begin{itemize}
+	\item \textbf{Imputation des données manquantes :} 
+	L’utilisation de méthodes d’imputation (moyenne/mode ou via \texttt{mice}) s’avère préférable à la simple suppression des observations incomplètes, car elle permet de conserver davantage d’information et, ce faisant, d’améliorer la qualité prédictive. La méthode \texttt{mice}, en particulier, peut tirer parti des corrélations entre variables pour une meilleure estimation.
+	
+	\item \textbf{Comparaison des modèles :} 
+	Parmi les quatre modèles testés (k-nn, k-nn + PCA, régression linéaire simple et régression linéaire + PCA), la régression linéaire se distingue généralement par des MSE plus faibles, surtout lorsqu’elle est associée à l’ACP. Le modèle k-nn reste compétitif, mais semble légèrement pénalisé dans le cas de variables peu informatives ou partiellement corrélées.
+	
+	\item \textbf{Effet de la PCA :} 
+	L’introduction d’une phase de réduction de dimension (ACP) peut aider dans certains cas à stabiliser les estimations et à diminuer le risque de surapprentissage, surtout si le nombre de prédicteurs est élevé. Cependant, dans la présente étude, la réduction de dimension n’apporte qu’un léger gain pour la régression linéaire ; pour le k-nn, l’intérêt de la PCA peut varier selon le choix de \(k\) et la répartition des variables.
+	
+	\item \textbf{Modèle nul :} 
+	Le modèle nul (prédiction de la moyenne d’\texttt{anticipation}) rappelle qu’il est utile de comparer toute approche supervisée à une référence basique. Ici, ce modèle simple est surpassé par toutes les approches qui intègrent des prédicteurs, preuve que les variables explicatives utilisées sont pertinentes.
+	
+	\item \textbf{Observations extrêmes ou rares :} 
+	Une partie non négligeable des erreurs les plus élevées concerne des poèmes courts ou fortement chargés en émotions négatives/positives, rédigés par des poètes suicidaires ou peu représentés dans le corpus. De futures analyses pourraient se concentrer sur ces profils atypiques (ex. détection d’outliers, augmentation de données, ou raffinement du modèle) pour mieux expliquer et prédire leur valeur d’\texttt{anticipation}.
+\end{itemize}
+
+En somme, ces premières analyses montrent que l’ajout de prédicteurs et l’imputation des valeurs manquantes contribuent à améliorer les performances. Les résultats soulignent aussi l’intérêt d’explorer la nature des poèmes “mal prédits” pour renforcer la robustesse du modèle. De prochaines étapes pourraient inclure des méthodes plus avancées (réseaux de neurones, modèles d’ensemble, ou exploitation du texte brut) et une évaluation plus fine de la sensibilité aux outliers et à la variance des prédictions. 
+
+	
+	
+\end{document}

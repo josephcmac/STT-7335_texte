@@ -1,0 +1,54 @@
+\documentclass[12pt,a4paper]{article}
+
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{float}
+
+\newcommand{\og}{\guillemotleft}
+\newcommand{\fg}{\guillemotright}
+
+
+\geometry{margin=2.5cm}
+\onehalfspacing
+
+\title{\textbf{Rapport intérimaire pour évaluation formative}\\
+	\vspace{0.5em}
+	\large{STT-7335 Méthodes d'analyse de données}}
+\author{José Manuel Rodríguez Caballero}
+\date{\today}
+
+
+\begin{document}
+
+\maketitle
+
+\input{intro.tex}
+\input{data.tex}
+\input{missing_data.tex}
+\input{descriptive.tex}
+\input{models.tex}
+\input{models_PCA.tex}
+\input{conclusions.tex}
+\small
+\begin{thebibliography}{1}
+	
+	\bibitem{StirmanPennebaker2001}
+	Stirman, Shannon Wiltsey, and James W. Pennebaker. 
+	``Word use in the poetry of suicidal and nonsuicidal poets.'' 
+	\emph{Biopsychosocial Science and Medicine} 63, no. 4 (2001): 517--522.
+	
+\end{thebibliography}
+
+	
+\end{document}

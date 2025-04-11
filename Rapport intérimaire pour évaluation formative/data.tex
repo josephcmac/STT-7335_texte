@@ -1,0 +1,42 @@
+\section{Description du jeu de données}
+\label{sec:description-donnees}
+
+Le présent travail repose sur un corpus de 3443 vers annotés, chacun étant associé à un certain nombre d’informations concernant l’auteur ou l’autrice (\emph{poète}) et à plusieurs scores émotionnels. Les variables collectées couvrent différents aspects : caractéristiques biographiques (identifiant unique, nom, sexe, date de naissance, date de décès, etc.), période d’écriture, indicateurs booléens (orientation sexuelle, statut suicidaire), ainsi que des mesures quantitatives telles que le nombre de mots par vers ou des scores de sentiment et d’émotion (\emph{colère}, \emph{peur}, \emph{joie}, etc.).
+
+\subsection{Structure des variables}
+
+\subsubsection{Niveau : poète}
+Le nombre total de poètes est de 16.
+
+\begin{itemize}
+	\item \textbf{poet\_id} : Identifiant unique propre à chaque poète.
+	\item \textbf{poet} : Nom de l’auteur ou de l’autrice.
+	\item \textbf{suicidal} : Variable binaire (indicateur booléen) précisant si le poète s’est effectivement suicidé (\(\texttt{TRUE}\)) ou non (\(\texttt{FALSE}\)). \textbf{Il s’agit de la variable réponse principale} de la présente étude.
+	\item \textbf{sex}  : Sexe du poète (\(\texttt{Male}\) ou \(\texttt{Female}\)).
+	\item \textbf{heterosexual} : Variable binaire (\(\texttt{TRUE}\) pour un poète hétérosexuel, \(\texttt{FALSE}\) dans les autres cas).
+	\item \textbf{date\_of\_birth} : Date de naissance de l’auteur ou de l’autrice.
+	\item \textbf{date\_of\_death} : Date de décès (si disponible).
+	\item \textbf{country\_of\_birth} : Pays de naissance.
+\end{itemize}
+	
+\subsubsection{Niveau : poème}
+Pour chaque poète, il y a trois poèmes, chacun correspondant à trois périodes.
+
+\begin{itemize}
+	\item \textbf{period} : Période d’écriture du poème (variable catégorielle : \textit{Early}, \textit{Middle}, \textit{Later}).
+	\item \textbf{poem\_title} : Titre du poème auquel le vers appartient.
+	\item \textbf{n\_words} : Nombre de mots présents dans le vers.
+\end{itemize}	
+
+\subsubsection{Niveau : vers}	
+\begin{itemize}
+	\item \textbf{anger}, \textbf{disgust}, \textbf{fear}, \textbf{joy}, \textbf{sadness}, \textbf{surprise}, \textbf{trust}, \textbf{anticipation} : Scores numériques représentant l’intensité de diverses émotions dans le vers.
+	\item \textbf{negative} : Score global regroupant des émotions à valence négative.
+	\item \textbf{positive} : Score global regroupant des émotions à valence positive.
+	\item \textbf{verse} : Position normalisée du vers dans le poème (\(0\) pour le premier vers, \(1\) pour le dernier).
+\end{itemize}
+
+\subsection*{Provenance et préparation}
+Les poèmes retenus proviennent de diverses sources en ligne, leurs métadonnées (dates de naissance et de décès, pays d’origine, orientation sexuelle, statut suicidaire, etc.) ayant principalement été extraites de Wikipédia et recherches en Google. Pour l’évaluation des émotions, on s’est appuyé sur un module d’analyse lexicale (\emph{syuzhet}) permettant de calculer automatiquement des scores de sentiment dans chaque vers.
+Pour l’un des poètes, aucune preuve claire n’a pu être trouvée, conduisant à une valeur manquante (\(\texttt{NA}\)).
+

@@ -1,0 +1,47 @@
+\section{Conclusion}
+\label{sec:conclusion-globale}
+
+Les différentes analyses menées dans ce travail avaient pour objet d’examiner dans quelle mesure les variables émotionnelles et certaines caractéristiques démographiques peuvent aider à distinguer les poètes suicidaires des non-suicidaires. Nous avons successivement abordé plusieurs aspects : la gestion d’une donnée manquante, la description statistique du corpus, puis diverses stratégies de modélisation (avec ou sans ACP), assorties de protocoles de validation. Les enseignements principaux sont les suivants :
+
+\paragraph{1. Gestion des données manquantes.}
+\begin{itemize}
+	\item Malgré un \textbf{faible nombre de données manquantes} (une seule observation), la mise en place d’un modèle de régression logistique pour imputer la variable d’orientation sexuelle illustre la cohérence d’une approche statistique rigoureuse.  
+	\item Le choix d’un \textbf{unique prédicteur} (le score moyen d’émotions positives) pour estimer cette variable reposait sur une hypothèse empirique, non universelle, visant essentiellement à démontrer la faisabilité d’une imputation fondée sur un modèle explicatif.  
+	\item Cette \textbf{imputation} ne prétend pas refléter la réalité biographique de la poétesse concernée ; il s’agit avant tout d’obtenir un jeu de données complet, avec la nécessité de rappeler qu’il s’agit d’une hypothèse artificielle lors de toute analyse ultérieure.
+\end{itemize}
+
+\paragraph{2. Statistiques descriptives des variables démographiques.}
+\begin{itemize}
+	\item Les premières observations suggèrent qu’\textbf{aucune différence notable} n’existe entre hommes et femmes en ce qui concerne la probabilité d’être classés comme suicidaires.  
+	\item Une \textbf{légère disparité} est toutefois remarquée entre hétérosexuels et non-hétérosexuels, mais la petite taille de l’échantillon et de possibles biais de mesure invitent à la prudence.  
+	\item Ces constats descriptifs constituent un \textbf{point de départ} pour des analyses plus approfondies, plutôt qu’une conclusion définitive.
+\end{itemize}
+
+\paragraph{3. Statistiques descriptives des variables émotionnelles.}
+\begin{itemize}
+	\item Les diagrammes en boîtes sur les données brutes ne révélaient pas de patterns aisément interprétables, justifiant le recours à une \textbf{moyenne bootstrap} pour extraire le signal sous-jacent et atténuer le bruit.  
+	\item La \textbf{variabilité} des estimations, visualisée par le rééchantillonnage (10\,000 itérations), permet de distinguer des émotions affichant une différence plus stable entre groupes suicidaires et non suicidaires (p.~ex. colère, joie, confiance, surprise, etc.) d’autres, comme la peur ou les émotions négatives, pour lesquelles les différences moyennes demeurent plus ténues ou inconsistantes.  
+	\item Le recours à l’\textbf{ACP} suggère également la possibilité de regrouper certaines émotions corrélées et de projeter les individus (poètes) dans un plan factoriel, offrant un aperçu visuel de leur proximité émotionnelle. Bien que les deux premiers axes puissent expliquer une partie substantielle de la variance, leurs valeurs exactes (82,2 \% et 10,1 \% de variance expliquée) restent modestes et nécessitent prudence dans l’interprétation.
+\end{itemize}
+
+\paragraph{4. Comparaison de modèles de classification (sans ACP).}
+\begin{itemize}
+	\item Nous avons examiné trois algorithmes (régression logistique, XGBoost et modèle gaussien) sur le même jeu de données, constatant des \textbf{performances globalement similaires} (de 73\,\% à 79\,\% d’exactitude).  
+	\item Les \textbf{intervalles de confiance} se recouvrent, ce qui empêche de désigner formellement un algorithme comme \og\,meilleur \fg. Les différences observées (p.~ex. sensibilité ou spécificité plus élevée pour l’un) s’expliquent en partie par la \textbf{faible taille de l’échantillon} et le nombre de rééchantillonnages.  
+	\item De surcroît, lorsque la spécificité ou la valeur prédictive positive atteignent 1 pour le modèle gaussien, la valeur prédictive négative s’avère plus faible ; cela illustre les \textbf{compromis classiques} (faux positifs \emph{vs.} faux négatifs) dans un contexte de classification binaire.
+\end{itemize}
+
+\paragraph{5. Modélisation par mélanges gaussiens et ACP (validation leave-one-poet-out).}
+\begin{itemize}
+	\item En passant par une \textbf{phase de réduction de dimension} (ACP) et un \textbf{modèle de mélanges gaussiens} ajusté sur des données bootstrapées, la validation \emph{leave-one-poet-out} indique une \textbf{excellente sensibilité} (aucun poète suicidaire n’a été manqué), mais une \textbf{spécificité plus modeste} (environ 62,5\,\%).  
+	\item L’\textbf{exactitude globale} avoisine 81\,\%, ce qui est appréciable compte tenu du faible nombre total de poètes (16). Toutefois, chaque erreur influence fortement les indicateurs de performance, et l’intervalle de confiance relatif à l’exactitude demeure large (54,35\,\% -- 95,95\,\%).  
+	\item Ces résultats confirment la \textbf{capacité du modèle} à reconnaître quasi systématiquement les poètes suicidaires, mais au prix de quelques \emph{faux positifs}. Ils illustrent le \textbf{dilemme} entre éliminer les faux négatifs (taux de détection maximal) et restreindre les faux positifs.
+\end{itemize}
+
+\paragraph{En synthèse, qu’a-t-on appris~?}
+\begin{itemize}
+	\item \textbf{Valeur du rééchantillonnage et de l’ACP}~: Les techniques de bootstrap et de réduction dimensionnelle (ACP) se révèlent pertinentes pour des données hétérogènes et de taille réduite, permettant de stabiliser les estimations et de visualiser les proximités émotionnelles.  
+	\item \textbf{Caractère sensible du statut suicidaire}~: La distinction suicidaire \emph{vs.} non suicidaire requiert une attention particulière aux biais potentiels (biais documentaire, ambiguïtés historiques, etc.), ainsi qu’une réflexion éthique (pas de conclusions hâtives sur la \og\, réalité \fg{} du statut).  
+	\item \textbf{Fiabilité limitée des conclusions}~: Les statistiques demeurent fragiles, car l’échantillon se compose de seulement 16 poètes, dont les contributions individuelles pèsent fortement sur les résultats. Les intervalles de confiance larges et les risques de sur-ajustement imposent de nuancer l’interprétation.  
+	\item \textbf{Comparaison et compromis entre modèles}~: Aucun algorithme n’est largement supérieur, chaque modèle exhibant des avantages (sensibilité, spécificité) et des inconvénients (faux positifs, faux négatifs). Dans l’ensemble, l’équilibre global (exactitude) avoisine les 70--80\,\%, ce qui peut être jugé correct dans ce contexte exploratoire.
+\end{itemize}

@@ -1,0 +1,18 @@
+\section{Introduction}
+\label{sec:introduction}
+
+La présente étude vise à déterminer dans quelle mesure on peut distinguer 
+les poètes suicidaires des poètes non suicidaires, à partir de différentes 
+variables démographiques (par exemple le sexe ou l’orientation sexuelle) 
+et d’indicateurs émotionnels (colère, joie, confiance, etc.). Dans ce cadre, 
+nous avons constitué un jeu de données comprenant 16 poètes, 3 poèmes par poète et 3443 vers, chacun associé 
+à plusieurs observations des scores émotionnels. Des techniques 
+statistiques variées — allant du rééchantillonnage \emph{bootstrap} à la 
+réduction de dimension par \emph{Analyse en Composantes Principales} (ACP), 
+en passant par des algorithmes de classification (régression logistique, 
+XGBoost, mélanges gaussiens) — ont été mobilisées pour explorer la robustesse 
+de la distinction suicidaire \emph{vs.} non suicidaire. L’objectif global est 
+d’évaluer la fiabilité de ces approches, tant sur le plan méthodologique 
+(gestion de données manquantes, validation \emph{leave-one-poet-out}) que 
+sur le plan pratique (comparaison des performances et limites inhérentes 
+au faible effectif).

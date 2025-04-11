@@ -1,0 +1,138 @@
+\section{Comparaison des trois modèles de classification}
+\label{sec:comparaison-modeles}
+
+Dans cette section, nous comparons trois techniques de classification afin de prédire si un
+poète appartient à la classe \og\, suicidaire \fg{} ou à la classe \og\, non suicidaire \fg. Les
+méthodes considérées sont :
+
+\begin{itemize}
+	\item \textbf{XGBoost}, qui repose sur un algorithme de \emph{gradient boosting},
+	\item \textbf{Régression logistique}, associée à un modèle linéaire généralisé (lien logit),
+	\item \textbf{Modèle gaussien}, où chaque classe suit une loi normale multivariée
+	(analyse discriminante).
+\end{itemize}
+
+\subsection{Procédure d’évaluation}
+
+Un ensemble de données, constitué de poètes \og\, suicidaires \fg{} et \og\, non suicidaires \fg, 
+est subdivisé en un échantillon d’apprentissage et un échantillon de test. Pour renforcer 
+la robustesse des estimations, l’échantillon d’apprentissage est rééchantillonné de 
+multiples fois (\emph{bootstrap}), et chacun des trois algorithmes de classification 
+est ajusté sur ces rééchantillonnages. Les poètes conservés hors de l’apprentissage 
+servent alors à tester la capacité de généralisation de chaque méthode.  
+En répétant ce processus plusieurs fois, on agrège l’ensemble des prédictions afin 
+d’obtenir une \emph{matrice de confusion globale} pour chaque modèle, accompagnée 
+des principales mesures de performance.
+
+Pour avoir une \textbf{vue d’ensemble} des résultats, nous proposons de présenter séparément 
+les \textbf{matrices de confusion} (une par modèle) et \textbf{les mesures de performance} 
+(les indicateurs usuels) dans deux séries de tableaux.  
+
+\begin{table}[H]
+	\centering
+	\caption{Matrice de confusion pour \textbf{XGBoost}.}
+	\label{tab:cm-xgboost-separee}
+	\begin{tabular}{cc|cc}
+		\toprule
+		& & \multicolumn{2}{c}{\textbf{Prédit}} \\
+		& & \textbf{FAUX} & \textbf{VRAI} \\
+		\midrule
+		\textbf{Observé} 
+		& \textbf{FAUX} & 30 & 17 \\
+		& \textbf{VRAI} & 10 & 43 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\caption{Matrice de confusion pour la \textbf{Régression Logistique}.}
+	\label{tab:cm-glm-separee}
+	\begin{tabular}{cc|cc}
+		\toprule
+		& & \multicolumn{2}{c}{\textbf{Prédit}} \\
+		& & \textbf{FAUX} & \textbf{VRAI} \\
+		\midrule
+		\textbf{Observé}
+		& \textbf{FAUX} & 36 & 17 \\
+		& \textbf{VRAI} & 6  & 41 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\caption{Matrice de confusion pour le \textbf{Modèle Gaussien}.}
+	\label{tab:cm-gaussien-separee}
+	\begin{tabular}{cc|cc}
+		\toprule
+		& & \multicolumn{2}{c}{\textbf{Prédit}} \\
+		& & \textbf{FAUX} & \textbf{VRAI} \\
+		\midrule
+		\textbf{Observé}
+		& \textbf{FAUX} & 24 & 21 \\
+		& \textbf{VRAI} & 0  & 55 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+\noindent
+Les \textbf{Tables~\ref{tab:cm-xgboost-separee}, \ref{tab:cm-glm-separee} et \ref{tab:cm-gaussien-separee}}
+montrent le nombre d’occurrences pour chacune des quatre cellules (vrais négatifs, faux positifs, 
+faux négatifs, vrais positifs) en fonction du modèle considéré. Rappelons que \textbf{FAUX} et \textbf{VRAI} 
+désignent respectivement \og non suicidaire \fg{} et \og suicidaire \fg, et que la \og classe positive \fg{} 
+est donc \textbf{VRAI}.
+
+\vspace{1em}
+
+\begin{table}[H]
+	\centering
+	\caption{Principales mesures de performance pour chacun des trois modèles.}
+	\label{tab:comparaison_mesures}
+	\begin{tabular}{p{4.2cm}ccc}
+		\toprule
+		\textbf{Indicateur} 
+		& \textbf{XGBoost} 
+		& \textbf{Logistique}
+		& \textbf{Gaussien} \\
+		\midrule
+		Exactitude (\emph{Accuracy})              
+		& 0,73          
+		& 0,77          
+		& 0,79          \\
+		IC à 95\,\% (Exactitude)            
+		& [0,632 -- 0,8139]
+		& [0,6751 -- 0,8483]
+		& [0,6971 -- 0,8651] \\
+		Sensibilité (\emph{Sensitivity})          
+		& 0,7167       
+		& 0,7069        
+		& 0,7237        \\
+		Spécificité (\emph{Specificity})          
+		& 0,7500        
+		& 0,8571        
+		& 1,0000        \\
+		Valeur préd. positive (\emph{VPP})        
+		& 0,8113        
+		& 0,8723        
+		& 1,0000        \\
+		Valeur préd. négative (\emph{VPN})        
+		& 0,6383        
+		& 0,6792        
+		& 0,5333        \\
+		Kappa                                      
+		& 0,4534        
+		& 0,5444        
+		& 0,557         \\
+		p-value (Test de McNemar)                  
+		& 0,2482        
+		& 0,03706       
+		& 1,275$\times 10^{-5}$ \\
+		\bottomrule
+	\end{tabular}
+	
+	\vspace{1ex}
+	\footnotesize
+	\textit{Remarque :} la \textbf{classe positive} est \textbf{VRAI} (suicidaire).
+\end{table}
+
